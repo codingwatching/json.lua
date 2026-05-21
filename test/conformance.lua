@@ -129,6 +129,22 @@ function other.encode_sparse_array()
     lt.assertEquals(json.encode {}, "[]")
     lt.assertEquals(json.encode { 1 }, "[1]")
     lt.assertEquals(json.encode { 1, 2 }, "[1,2]")
+    do
+        local t = {}
+        t["a"] = 1
+        t["b"] = 2
+        t["c"] = 3
+        t["d"] = 4
+        t["e"] = 5
+        t[1] = 1
+        t[2] = 2
+        t["a"] = nil
+        t["b"] = nil
+        t["c"] = nil
+        t["d"] = nil
+        t["e"] = nil
+        lt.assertEquals(json.encode(t), "[1,2]")
+    end
     lt.assertError(json.encode, { nil, 2 })
     lt.assertError(json.encode, { 1, 2, nil, 4 })
     lt.assertError(json.encode, { 1, 2, [100] = 1 })

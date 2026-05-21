@@ -214,14 +214,30 @@ function encode_map.table(t)
         end
         statusVisited[t] = nil
         return "}"
-    elseif json.supportSparseArray then
+    else
         local max = 0
-        for k in next, t do
-            if math_type(k) ~= "integer" or k <= 0 then
-                error("invalid table: mixed or invalid key types: "..tostring(k))
+        if json.supportSparseArray then
+            for k in next, t do
+                if math_type(k) ~= "integer" or k <= 0 then
+                    error("invalid table: mixed or invalid key types: "..tostring(k))
+                end
+                if max < k then
+                    max = k
+                end
             end
-            if max < k then
-                max = k
+        else
+            local count = 0
+            for k in next, t do
+                if math_type(k) ~= "integer" or k <= 0 then
+                    error("invalid table: mixed or invalid key types: "..tostring(k))
+                end
+                count = count + 1
+                if max < k then
+                    max = k
+                end
+            end
+            if count ~= max then
+                error("invalid table: sparse array is not supported")
             end
         end
         statusBLen = statusBLen + 1
@@ -231,35 +247,6 @@ function encode_map.table(t)
             statusBLen = statusBLen + 1
             statusBuilder[statusBLen] = ","
             encode(t[i])
-        end
-        statusVisited[t] = nil
-        return "]"
-    else
-        if t[1] == nil then
-            error("invalid table: sparse array is not supported")
-        end
-        ---@diagnostic disable-next-line: undefined-global
-        if jit and t[0] ~= nil then
-            -- 0 is the first index in luajit
-            error("invalid table: mixed or invalid key types: "..0)
-        end
-        statusBLen = statusBLen + 1
-        statusBuilder[statusBLen] = "["
-        encode(t[1])
-        local count = 2
-        while t[count] ~= nil do
-            statusBLen = statusBLen + 1
-            statusBuilder[statusBLen] = ","
-            encode(t[count])
-            count = count + 1
-        end
-        if next(t, count - 1) ~= nil then
-            local k = next(t, count - 1)
-            if type(k) == "number" then
-                error("invalid table: sparse array is not supported")
-            else
-                error("invalid table: mixed or invalid key types: "..tostring(k))
-            end
         end
         statusVisited[t] = nil
         return "]"
